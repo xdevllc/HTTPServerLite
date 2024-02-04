@@ -1,5 +1,8 @@
 import sys
+import logging
 import socket
+
+from .http_codes import HTTPStatusCodes
 
 
 class HTTPRequest:
@@ -14,14 +17,9 @@ class HTTPRequest:
 
 class BaseHTTPServer:
 
-    CODE501 = "HTTP/1.1 501 Not Implemented\n"
-    CODE404 = "HTTP/1.1 404 Not Found\n"
-    CODE200 = "HTTP/1.1 200 OK\n"
-
-    STATUS = {200:CODE200, 404:CODE404, 501:CODE501}
-
     def __init__(self) -> None:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.logger = logging.getLogger("HTTPServerLite")
 
     def start(self):
         
@@ -57,10 +55,10 @@ class BaseHTTPServer:
     
     def handle(self, request):
 
+        self.log_request_received(request)
+
         if request.method == "GET":
-
             self.do_GET(request)
-
         elif request.method == "POST":
             self.do_POST(request)
         elif request.method == "PUT":
@@ -77,7 +75,7 @@ class BaseHTTPServer:
 
         # Prepare the response headers
 
-        response_headers = self.STATUS[status]
+        response_headers = HTTPStatusCodes.STATUS[status]
         for header, value in headers.items():
             response_headers += f"{header}: {value}\n"
         
@@ -91,6 +89,14 @@ class BaseHTTPServer:
         request.client_connection.close()
 
 
+    def log_request_received(self, request)->None:
+        """
+        Default logging control
+        :param request: The request
+        :type request: HTTPRequest
+        """
+        self.logger.info(f"{request.method} Request Received {request.client_address} headers={request.headers}")
+
     def do_GET(self, request) -> None: pass
     def do_POST(self, request) -> None: pass
     def do_PUT(self, request) -> None: pass
@@ -98,13 +104,12 @@ class BaseHTTPServer:
     def do_HEAD(self, request) -> None: pass
 
 
-class HTTPServerLite(BaseHTTPServer):
+class HTTPLite(BaseHTTPServer):
 
     def __init__(self) -> None:
         super().__init__()
 
     def do_GET(self, request) -> None:
-
         html = '<html><head></head><body style="text-align:center"><h1>HTTP Server Lite</h1><p>Server is online!</p></body></html>'
         self.send(request, html)
 
