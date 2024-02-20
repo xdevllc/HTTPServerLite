@@ -1,11 +1,10 @@
 import logging
-
 from HTTPServerLite import HTTPLite
 
-server = HTTPLite()
-
+# Define the server object
+server = HTTPLite("index.html")
 
 # Configure logging for the application
 logging.basicConfig(level=logging.INFO)
-
 server.start()
+

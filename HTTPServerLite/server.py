@@ -36,11 +36,19 @@ class BaseHTTPServer:
 
                 try:
                     request = client_connection.recv(1024).decode()
+
                     # Parse the first line of the request
                     first_line = request.split('\n')[0]
                     method, path, _ = first_line.split()
+                    headers = {"method": method, "path": path}
+                    lines = request.split('\n')
+                    for line in lines[1:]:  # Skip the first line as it's the request line
+                        if ': ' in line:
+                            header, value = line.split(': ', 1)
+                            headers[header] = value.strip()
 
-                    request = HTTPRequest(client_connection, client_address, {'method':method, "path":path})
+
+                    request = HTTPRequest(client_connection, client_address, headers)
                     self.handle(request)
                 except socket.timeout:
                     print("recv() timed out")
@@ -68,7 +76,8 @@ class BaseHTTPServer:
         elif request.method == "HEAD":
             self.do_HEAD(request)
         else:
-            self.send(request, "", status=404)
+            # If the method is not listed above return 405 not allowed
+            self.send(request, "", status=405)
 
                    
     def send(self, request, body, headers = {}, status = 200):
@@ -95,7 +104,7 @@ class BaseHTTPServer:
         :param request: The request
         :type request: HTTPRequest
         """
-        self.logger.info(f"{request.method} Request Received {request.client_address} headers={request.headers}")
+        self.logger.info(f"{request.method} Request Received {request.client_address} path={request.headers['path']} method={request.headers['method']}")
 
     def do_GET(self, request) -> None: pass
     def do_POST(self, request) -> None: pass
@@ -106,11 +115,19 @@ class BaseHTTPServer:
 
 class HTTPLite(BaseHTTPServer):
 
-    def __init__(self) -> None:
+    def __init__(self, webpage_file = None) -> None:
         super().__init__()
+        self.page = '<html><head></head><body style="text-align:center"><h1>HTTP Server Lite</h1><p>Server is online!</p></body></html>'
+
+        if webpage_file: self.page = self.load_file(webpage_file)
+
+    def load_file(self, filepath):
+
+        if filepath.endswith(".html"):
+            with open(filepath, "r") as f:
+                return f.read()
 
     def do_GET(self, request) -> None:
-        html = '<html><head></head><body style="text-align:center"><h1>HTTP Server Lite</h1><p>Server is online!</p></body></html>'
+        html = self.page
         self.send(request, html)
-
 
