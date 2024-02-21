@@ -65,18 +65,25 @@ class BaseHTTPServer:
 
         self.log_request_received(request)
 
-        if request.method == "GET":
-            self.do_GET(request)
-        elif request.method == "POST":
-            self.do_POST(request)
-        elif request.method == "PUT":
-            self.do_PUT(request)
-        elif request.method == "DELETE":
-            self.do_DELETE(request)
-        elif request.method == "HEAD":
-            self.do_HEAD(request)
+        method_handlers = {
+            "GET": self.do_GET,
+            "POST": self.do_POST,
+            "PUT": self.do_PUT,
+            "DELETE": self.do_DELETE,
+            "HEAD": self.do_HEAD,
+            "OPTIONS": self.do_OPTIONS,
+            "PATCH": self.do_PATCH,
+            "TRACE": self.do_TRACE,
+            "CONNECT": self.do_CONNECT
+        }
+        
+        # Get the handler based on the request method
+        handler = method_handlers.get(request.method)
+        
+        # If a handler exists for the method, call it, otherwise handle unknown method
+        if handler:
+            handler(request)
         else:
-            # If the method is not listed above return 405 not allowed
             self.send(request, "", status=405)
 
                    
@@ -111,6 +118,10 @@ class BaseHTTPServer:
     def do_PUT(self, request) -> None: pass
     def do_DELETE(self, request) -> None: pass
     def do_HEAD(self, request) -> None: pass
+    def do_OPTIONS(self, request) -> None: pass
+    def do_PATCH(self, request) -> None: pass
+    def do_TRACE(self, request) -> None: pass
+    def do_CONNECT(self, request) -> None: pass
 
 
 class HTTPLite(BaseHTTPServer):
